@@ -27,3 +27,9 @@ BEGIN
     EXEC (N'CREATE SCHEMA etl');
 END
 GO  
+
+-- Schemas overview
+SELECT name AS schema_name                     
+FROM sys.schemas
+WHERE name IN (N'bronze', N'silver', N'gold', N'etl');
+GO

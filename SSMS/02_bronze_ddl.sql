@@ -186,3 +186,26 @@ BEGIN
     );
 END
 GO
+
+-- checking_schemas
+
+SELECT t.[name] AS [table_name], COUNT(c.[column_id]) AS [column_count]
+FROM [olist_dwh].[sys].[tables]  AS t
+JOIN [olist_dwh].[sys].[columns] AS c ON c.[object_id] = t.[object_id]
+WHERE t.[schema_id] = SCHEMA_ID(N'bronze')
+GROUP BY t.[name]
+ORDER BY t.[name];
+GO
+
+
+
+-- metadata_check
+  
+SELECT t.[name] AS [table_name]
+FROM [olist_dwh].[sys].[tables] AS t
+WHERE t.[schema_id] = SCHEMA_ID(N'bronze')
+  AND (SELECT COUNT(*) FROM [olist_dwh].[sys].[columns] AS c
+       WHERE c.[object_id] = t.[object_id]
+         AND c.[name] IN (N'dwh_load_ts', N'dwh_source_file', N'dwh_batch_id')) <> 3;
+GO
+

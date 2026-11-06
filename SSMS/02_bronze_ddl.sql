@@ -174,9 +174,9 @@ GO
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
-               WHERE s.[name] = N'bronze' AND t.[name] = N'product_category_name_translation')
+               WHERE s.[name] = N'bronze' AND t.[name] = N'olist_product_category_name_translation')
 BEGIN
-    CREATE TABLE [olist_dwh].[bronze].[product_category_name_translation]
+    CREATE TABLE [olist_dwh].[bronze].[olist_product_category_name_translation]
     (
         [product_category_name]         NVARCHAR(200)  NULL,  -- Portuguese category name
         [product_category_name_english] NVARCHAR(200)  NULL,  -- English category name

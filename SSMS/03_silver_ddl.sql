@@ -227,3 +227,35 @@ BEGIN
     );
 END
 GO
+
+-- ============================================================================
+-- PHASE 2: Pre-populate Missing Product Category Translations (Quirk #6)
+-- ============================================================================
+
+USE olist_dwh;
+GO
+
+-- Insert pc_gamer lookup if missing
+IF NOT EXISTS (SELECT 1 
+               FROM silver.category_translation 
+               WHERE product_category_name = 'pc_gamer'
+)
+BEGIN
+    INSERT INTO silver.category_translation (product_category_name, product_category_name_english, dwh_batch_id)
+    VALUES ('pc_gamer', 'pc_gamer', -1);
+END;
+
+-- Insert portateis_cozinha_e_preparadores_de_alimentos if missing
+IF NOT EXISTS (SELECT 1 
+               FROM silver.category_translation 
+               WHERE product_category_name = 'portateis_cozinha_e_preparadores_de_alimentos'
+)
+BEGIN
+    INSERT INTO silver.category_translation (product_category_name, product_category_name_english, dwh_batch_id)
+    VALUES ('portateis_cozinha_e_preparadores_de_alimentos', 'kitchen_portables_and_food_preparators', -1);
+END;
+GO
+
+-- Verify the table structure is ready
+SELECT * FROM silver.category_translation;
+GO

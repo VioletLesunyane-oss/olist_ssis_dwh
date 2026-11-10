@@ -169,14 +169,15 @@ IF NOT EXISTS (SELECT 1
 BEGIN
     CREATE TABLE [olist_dwh].[silver].[order_payments]
     (
-        [order_id]             NVARCHAR(50)   NOT NULL,  -- order paid
-        [payment_sequential]   INT            NOT NULL,  -- payment line number within the order
-        [payment_type]         NVARCHAR(30)   NOT NULL,  -- credit_card, boleto, voucher, debit_card or Unknown
-        [payment_installments] INT            NULL,      -- number of installments
-        [payment_value]        DECIMAL(10,2)  NULL,      -- payment amount
-        [dwh_load_ts]          DATETIME2      NOT NULL CONSTRAINT [df_order_payments_dwh_load_ts] DEFAULT SYSDATETIME(),  -- load time, set by SQL Server
-        [dwh_batch_id]         INT            NULL,      -- run id from etl.batch_log, set by SSIS
-        CONSTRAINT [pk_order_payments] PRIMARY KEY CLUSTERED ([order_id], [payment_sequential])
+        [order_payment_id]    INT IDENTITY(1,1) NOT NULL,
+        [order_id]            NVARCHAR(50)   NOT NULL,
+        [payment_sequential]  INT            NULL,
+        [payment_type]        NVARCHAR(50)   NULL,
+        [payment_installments] INT            NULL,
+        [payment_value]       DECIMAL(10,2)  NULL,
+        [dwh_load_ts]         DATETIME2      NOT NULL CONSTRAINT [df_order_payments_dwh_load_ts] DEFAULT SYSDATETIME(),
+        [dwh_batch_id]        INT            NULL,
+        CONSTRAINT [pk_order_payments] PRIMARY KEY CLUSTERED ([order_payment_id])
     );
 END
 GO
@@ -196,7 +197,7 @@ BEGIN
         [review_id]               NVARCHAR(50)   NOT NULL,  -- one row per review_id after de-duplication
         [order_id]                NVARCHAR(50)   NOT NULL,  -- order reviewed
         [review_score]            TINYINT        NULL,      -- 1 to 5
-        [review_comment_title]    NVARCHAR(500)  NULL,      -- optional title
+        [review_comment_title]    NVARCHAR(200)  NULL,      -- optional title
         [review_comment_message]  NVARCHAR(MAX)  NULL,      -- free text, may contain commas and line breaks
         [review_creation_date]    DATETIME2      NULL,      -- survey sent
         [review_answer_timestamp] DATETIME2      NULL,      -- survey answered
@@ -218,8 +219,8 @@ IF NOT EXISTS (SELECT 1
 BEGIN
     CREATE TABLE [olist_dwh].[silver].[category_translation]
     (
-        [product_category_name]         NVARCHAR(200)  NOT NULL,  -- Portuguese category name
-        [product_category_name_english] NVARCHAR(200)  NOT NULL,  -- English category name
+        [product_category_name]         NVARCHAR(100)  NOT NULL,  -- Portuguese category name
+        [product_category_name_english] NVARCHAR(100)  NOT NULL,  -- English category name
         [dwh_load_ts]                   DATETIME2      NOT NULL CONSTRAINT [df_category_translation_dwh_load_ts] DEFAULT SYSDATETIME(),  -- load time, set by SQL Server
         [dwh_batch_id]                  INT            NULL,      -- run id from etl.batch_log, set by SSIS
         CONSTRAINT [pk_category_translation] PRIMARY KEY CLUSTERED ([product_category_name])

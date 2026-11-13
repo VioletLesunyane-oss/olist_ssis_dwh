@@ -1,5 +1,17 @@
+-- ============================================================================
+-- PROJECT: Olist E-Commerce Data Warehouse
+-- LAYER:   Bronze Layer (Raw Landing Zone)
+-- PURPOSE: Creates all 9 raw landing tables in the [bronze] schema using
+--          re-runnable IF NOT EXISTS guards, appends audit metadata columns,
+--          and verifies table structure and metadata completeness.
+-- ============================================================================
+
 USE olist_dwh
 
+-- ============================================================================
+-- 1. TABLE: bronze.olist_customers
+-- Source file: olist_customers_dataset.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -20,7 +32,10 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- 2. TABLE: bronze.olist_geolocation
 -- Source file: olist_geolocation_dataset.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -40,7 +55,10 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- 3. TABLE: bronze.olist_order_items
 -- Source file: olist_order_items_dataset.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -62,7 +80,10 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- 4. TABLE: bronze.olist_order_payments
 -- Source file: olist_order_payments_dataset.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -82,7 +103,10 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- 5. TABLE: bronze.olist_order_reviews
 -- Source file: olist_order_reviews_dataset.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -104,7 +128,10 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- 6. TABLE: bronze.olist_orders
 -- Source file: olist_orders_dataset.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -127,7 +154,10 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- 7. TABLE: bronze.olist_products
 -- Source file: olist_products_dataset.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -151,7 +181,10 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- 8. TABLE: bronze.olist_sellers
 -- Source file: olist_sellers_dataset.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -170,7 +203,10 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- 9. TABLE: bronze.olist_product_category_name_translation
 -- Source file: product_category_name_translation.csv
+-- ============================================================================
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]
@@ -187,8 +223,9 @@ BEGIN
 END
 GO
 
--- checking_schemas
-
+-- ============================================================================
+-- VERIFICATION 1: Schema & Column Count Check (Expects 9 Bronze Tables)
+-- ============================================================================
 SELECT t.[name] AS [table_name], COUNT(c.[column_id]) AS [column_count]
 FROM [olist_dwh].[sys].[tables]  AS t
 JOIN [olist_dwh].[sys].[columns] AS c ON c.[object_id] = t.[object_id]
@@ -196,16 +233,15 @@ WHERE t.[schema_id] = SCHEMA_ID(N'bronze')
 GROUP BY t.[name]
 ORDER BY t.[name];
 GO
-
-
-
--- metadata_check
-  
+-- ============================================================================
+-- VERIFICATION 2: Audit Metadata Columns Check (Expects 0 Rows Returned)
+-- Confirms every Bronze table has dwh_load_ts, dwh_source_file, and dwh_batch_id.
+-- ============================================================================
 SELECT t.[name] AS [table_name]
 FROM [olist_dwh].[sys].[tables] AS t
 WHERE t.[schema_id] = SCHEMA_ID(N'bronze')
-  AND (SELECT COUNT(*) FROM [olist_dwh].[sys].[columns] AS c
-       WHERE c.[object_id] = t.[object_id]
-         AND c.[name] IN (N'dwh_load_ts', N'dwh_source_file', N'dwh_batch_id')) <> 3;
+AND (SELECT COUNT(*) FROM [olist_dwh].[sys].[columns] AS c
+WHERE c.[object_id] = t.[object_id]
+AND c.[name] IN (N'dwh_load_ts', N'dwh_source_file', N'dwh_batch_id')) <> 3;
 GO
 

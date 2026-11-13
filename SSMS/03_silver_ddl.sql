@@ -3,13 +3,13 @@
 -- DESIGN CONVENTION: Strict snake_case & Re-runnable Guards
 -- ============================================================================
 
-USE olist_dwh;
-GO
-
 -- ============================================================================
 -- 1. TABLE: silver.customers
 -- TRANSFORMATIONS: Trim, proper-case city, upper-case state, pad zip to 5 chars
 -- ============================================================================
+USE olist_dwh;
+GO
+  
 IF NOT EXISTS (SELECT 1
                FROM [olist_dwh].[sys].[tables]  AS t
                JOIN [olist_dwh].[sys].[schemas] AS s ON s.[schema_id] = t.[schema_id]

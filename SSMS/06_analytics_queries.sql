@@ -36,7 +36,6 @@ GO
 -- ============================================================================
 SELECT TOP 10
     p.[product_category_name_english] AS [category_english],
-    p.[product_category_name] AS [category_portuguese],
     COUNT(DISTINCT f.[order_id]) AS [total_orders],
     COUNT(*) AS [units_sold],
     SUM(f.[total_item_value]) AS [total_revenue],
@@ -47,7 +46,6 @@ JOIN [gold].[dim_product] AS p
 WHERE p.[product_key] <> -1
 GROUP BY 
     p.[product_category_name_english], 
-    p.[product_category_name]
 ORDER BY 
     [total_revenue] DESC;
 GO
@@ -73,15 +71,12 @@ ORDER BY
 GO
 
 -- ============================================================================
--- Q4: Delivery Performance & Late Delivery Rate by Customer State
--- Filters strictly to delivered orders (is_delivered = 1) to evaluate logistics.
+-- Q4: % of orders delivered late, by customer state
 -- ============================================================================
 WITH order_delivery AS (
     SELECT DISTINCT
         f.[order_id],
         c.[customer_state],
-        f.[days_to_deliver],
-        f.[delivery_delay_days],
         CAST(f.[is_late] AS INT) AS [is_late_int]
     FROM [gold].[fact_sales] AS f
     JOIN [gold].[dim_customer] AS c 
@@ -90,15 +85,13 @@ WITH order_delivery AS (
         ON f.[order_status_key] = os.[order_status_key]
     WHERE os.[is_delivered] = 1
       AND c.[customer_key] <> -1
-      AND f.[days_to_deliver] IS NOT NULL
+      AND f.[is_late] IS NOT NULL
 )
 SELECT 
     [customer_state],
     COUNT(*) AS [delivered_orders],
-    CAST(AVG(CAST([days_to_deliver] AS DECIMAL(10,2))) AS DECIMAL(5,2)) AS [avg_days_to_deliver],
-    CAST(AVG(CAST([delivery_delay_days] AS DECIMAL(10,2))) AS DECIMAL(5,2)) AS [avg_delay_vs_estimate_days],
     SUM([is_late_int]) AS [late_orders],
-    CAST(SUM([is_late_int]) * 100.0 / COUNT(*) AS DECIMAL(5,2)) AS [late_delivery_rate_pct]
+    CAST(SUM([is_late_int]) * 100.0 / COUNT(*) AS DECIMAL(5,2)) AS [late_delivery_pct]
 FROM order_delivery
 GROUP BY 
     [customer_state]
@@ -110,73 +103,60 @@ GO
 -- Q5: Top 10 States by Customer Spend & Average Order Value (AOV)
 -- Compares regional purchasing power across Brazilian states.
 -- ============================================================================
-SELECT TOP 10
-    c.[customer_state],
-    COUNT(DISTINCT c.[customer_unique_id]) AS [unique_customers],
-    COUNT(DISTINCT f.[order_id]) AS [total_orders],
-    SUM(f.[total_item_value]) AS [total_spend],
-    CAST(SUM(f.[total_item_value]) / NULLIF(COUNT(DISTINCT f.[order_id]), 0) AS DECIMAL(10,2)) AS [avg_order_value]
-FROM [gold].[fact_sales] AS f
-JOIN [gold].[dim_customer] AS c 
-    ON f.[customer_key] = c.[customer_key]
-WHERE c.[customer_key] <> -1
-GROUP BY 
-    c.[customer_state]
-ORDER BY 
-    [total_spend] DESC;
-GO
-
--- ============================================================================
--- Q6: Top 10 Sellers by Revenue & Customer Review Satisfaction
--- Joins sales volume with average review scores per seller (minimum 20 orders).
--- ============================================================================
-WITH seller_sales AS (
-    SELECT 
-        s.[seller_key],
-        s.[seller_id],
-        s.[seller_city],
+WITH route_deliveries AS (
+    SELECT DISTINCT
+        f.[order_id],
         s.[seller_state],
-        COUNT(DISTINCT f.[order_id]) AS [total_orders],
-        COUNT(*) AS [items_sold],
-        SUM(f.[total_item_value]) AS [total_revenue]
+        c.[customer_state],
+        f.[days_to_deliver]
     FROM [gold].[fact_sales] AS f
     JOIN [gold].[dim_seller] AS s 
         ON f.[seller_key] = s.[seller_key]
-    WHERE s.[seller_key] <> -1
-    GROUP BY 
-        s.[seller_key], s.[seller_id], s.[seller_city], s.[seller_state]
-),
-seller_reviews AS (
-    SELECT DISTINCT
-        f.[seller_key],
-        r.[review_id],
-        CAST(r.[review_score] AS DECIMAL(5,2)) AS [review_score]
-    FROM [gold].[fact_sales] AS f
-    JOIN [gold].[fact_reviews] AS r 
-        ON f.[order_id] = r.[order_id]
+    JOIN [gold].[dim_customer] AS c 
+        ON f.[customer_key] = c.[customer_key]
+    JOIN [gold].[dim_order_status] AS os 
+        ON f.[order_status_key] = os.[order_status_key]
+    WHERE os.[is_delivered] = 1
+      AND s.[seller_key] <> -1
+      AND c.[customer_key] <> -1
+      AND f.[days_to_deliver] IS NOT NULL
 )
 SELECT TOP 10
-    ss.[seller_id],
-    ss.[seller_city],
-    ss.[seller_state],
-    ss.[total_orders],
-    ss.[items_sold],
-    ss.[total_revenue],
-    CAST(AVG(sr.[review_score]) AS DECIMAL(3,2)) AS [avg_review_score]
-FROM seller_sales AS ss
-LEFT JOIN seller_reviews AS sr 
-    ON ss.[seller_key] = sr.[seller_key]
-WHERE ss.[total_orders] >= 20
+    [seller_state],
+    [customer_state],
+    CONCAT([seller_state], N' -> ', [customer_state]) AS [shipping_route],
+    COUNT(*) AS [delivered_orders],
+    CAST(AVG(CAST([days_to_deliver] AS DECIMAL(10,2))) AS DECIMAL(5,2)) AS [avg_delivery_days]
+FROM route_deliveries
 GROUP BY 
-    ss.[seller_id], ss.[seller_city], ss.[seller_state],
-    ss.[total_orders], ss.[items_sold], ss.[total_revenue]
+    [seller_state], 
+    [customer_state]
 ORDER BY 
-    ss.[total_revenue] DESC;
+    [delivered_orders] DESC;
 GO
 
 -- ============================================================================
--- Q7: Customer Retention & Repeat Purchase Rate (Using customer_unique_id)
--- Measures single-order vs. repeat customers across the platform.
+-- Q6: Payment type mix by revenue and average installments
+-- ============================================================================
+SELECT 
+    pt.[payment_type],
+    COUNT(DISTINCT fp.[order_id]) AS [distinct_orders],
+    COUNT(*) AS [payment_transactions],
+    SUM(fp.[payment_value]) AS [total_revenue],
+    CAST(SUM(fp.[payment_value]) * 100.0 / SUM(SUM(fp.[payment_value])) OVER () AS DECIMAL(5,2)) AS [revenue_share_pct],
+    CAST(AVG(CAST(fp.[payment_installments] AS DECIMAL(10,2))) AS DECIMAL(5,2)) AS [avg_installments]
+FROM [gold].[fact_payments] AS fp
+JOIN [gold].[dim_payment_type] AS pt 
+    ON fp.[payment_type_key] = pt.[payment_type_key]
+GROUP BY 
+    pt.[payment_type]
+ORDER BY 
+    [total_revenue] DESC;
+GO
+
+
+-- ============================================================================
+-- Q7: Does late delivery hurt review scores? (avg score: late vs on-time)
 -- ============================================================================
 WITH customer_orders AS (
     SELECT 

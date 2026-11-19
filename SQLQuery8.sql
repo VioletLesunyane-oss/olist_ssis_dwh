@@ -1,1 +1,0 @@
-SELECT * FROM etl.batch_log

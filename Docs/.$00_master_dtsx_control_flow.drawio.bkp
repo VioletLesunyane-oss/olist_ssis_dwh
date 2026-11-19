@@ -1,0 +1,112 @@
+<mxfile host="Electron" agent="ChatGPT">
+  <diagram id="olist-master-control-flow" name="00_master_dtsx">
+    <mxGraphModel dx="2008" dy="1057" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#0F172A;" value="00_master_dtsx | ETL Orchestration &amp; Batch Control" vertex="1">
+          <mxGeometry height="44" width="790" x="190" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontSize=12;fontColor=#334155;align=center;verticalAlign=middle;" value=" &lt;b&gt;Green&lt;/b&gt; = Success path &amp;nbsp;&amp;nbsp; &lt;b&gt;Red&lt;/b&gt; = Failure path &amp;nbsp;&amp;nbsp; &lt;b&gt;Dashed green&lt;/b&gt; = Logical OR" vertex="1">
+          <mxGeometry height="30" width="670" x="250" y="72" as="geometry" />
+        </mxCell>
+        <mxCell id="batch" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E2E8F0;strokeColor=#475569;strokeWidth=2;fontColor=#0F172A;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;[elt_batch_log]&lt;/b&gt;&lt;br/&gt;Creates batch_id (status = &#39;RUNNING&#39;)" vertex="1">
+          <mxGeometry height="58" width="440" x="365" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="bronze" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#0F172A;fontSize=13;align=center;verticalAlign=middle;spacing=7;" value="&lt;b&gt;[EPT_01_bronze_load]&lt;/b&gt;&lt;br/&gt;Runs 01_bronze_load.dtsx (passes batch_id)" vertex="1">
+          <mxGeometry height="58" width="440" x="365" y="225" as="geometry" />
+        </mxCell>
+        <mxCell id="silver" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#0F172A;fontSize=13;align=center;verticalAlign=middle;spacing=7;" value="&lt;b&gt;[EPT_02_silver_transform]&lt;/b&gt;&lt;br/&gt;Runs 02_silver_transform.dtsx (passes batch_id)" vertex="1">
+          <mxGeometry height="58" width="440" x="365" y="325" as="geometry" />
+        </mxCell>
+        <mxCell id="dimensions" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#0F172A;fontSize=13;align=center;verticalAlign=middle;spacing=7;" value="&lt;b&gt;[EPT_03_gold_dimensions]&lt;/b&gt;&lt;br/&gt;Runs 03_gold_dimensions.dtsx (passes batch_id)" vertex="1">
+          <mxGeometry height="58" width="440" x="365" y="425" as="geometry" />
+        </mxCell>
+        <mxCell id="facts" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#0F172A;fontSize=13;align=center;verticalAlign=middle;spacing=7;" value="&lt;b&gt;[EPT_04_gold_facts]&lt;/b&gt;&lt;br/&gt;Runs 04_gold_facts.dtsx (passes batch_id)" vertex="1">
+          <mxGeometry height="58" width="440" x="365" y="525" as="geometry" />
+        </mxCell>
+        <mxCell id="succeeded" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=2;fontColor=#14532D;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=7;" value="&lt;b&gt;[SQL_mark_batch_succeeded]&lt;/b&gt;" vertex="1">
+          <mxGeometry height="58" width="360" x="145" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="failed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;strokeWidth=2;fontColor=#7F1D1D;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=7;" value="&lt;b&gt;[SQL_mark_batch_failed]&lt;/b&gt;" vertex="1">
+          <mxGeometry height="58" width="360" x="665" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;strokeWidth=2;fontColor=#1E3A8A;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;[SQL_end_batch]&lt;/b&gt;&lt;br/&gt;Stamps end_ts timestamp" vertex="1">
+          <mxGeometry height="64" width="440" x="365" y="935" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="batch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="bronze" value="Success">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="bronze" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="silver" value="Success">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="silver" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="dimensions" value="Success">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="dimensions" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="facts" value="Success">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="success_branch" edge="1" parent="1" source="facts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;" target="succeeded" value="Green: Success">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="475.00000000000045" y="689" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="failure_branch" edge="1" parent="1" source="facts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;exitX=0.719;exitY=0.966;entryX=0.5;entryY=0;exitDx=0;exitDy=0;exitPerimeter=0;" target="failed" value="Red: Failure from ANY step above">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="694.9999999999995" y="689" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="merge_success" edge="1" parent="1" source="succeeded" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.25;entryY=0;dashed=1;dashPattern=6 4;" target="end" value="Logical OR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="merge_failure" edge="1" parent="1" source="failed" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.75;entryY=0;dashed=1;dashPattern=6 4;" target="end" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="failure_note" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=11;fontColor=#B91C1C;fontStyle=2;" value="Failure path applies if any step above fails" vertex="1">
+          <mxGeometry height="28" width="390" x="390" y="875" as="geometry" />
+        </mxCell>
+        <mxCell id="lJm9MD6qozacIpexmdlP-1" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;exitX=0.719;exitY=0.966;entryX=0.882;entryY=0.006;exitDx=0;exitDy=0;exitPerimeter=0;entryDx=0;entryDy=0;entryPerimeter=0;" target="failed" value="Red: Failure from ANY step above">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="983" y="250" />
+            </Array>
+            <mxPoint x="805" y="249.5" as="sourcePoint" />
+            <mxPoint x="969" y="458.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lJm9MD6qozacIpexmdlP-2" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;exitX=0.719;exitY=0.966;exitDx=0;exitDy=0;exitPerimeter=0;" value="Red: Failure from ANY step above">
+          <mxGeometry relative="1" x="-0.2761" y="-20" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="950" y="343.25" />
+              <mxPoint x="950" y="785.25" />
+            </Array>
+            <mxPoint x="805" y="342.75" as="sourcePoint" />
+            <mxPoint x="950" y="790" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lJm9MD6qozacIpexmdlP-3" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;" value="Red: Failure from ANY step above">
+          <mxGeometry relative="1" x="-0.2761" y="-20" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="805" y="458.88" />
+              <mxPoint x="910" y="458.88" />
+            </Array>
+            <mxPoint x="805" y="458.88" as="sourcePoint" />
+            <mxPoint x="910" y="790" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lJm9MD6qozacIpexmdlP-4" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;" value="Red: Failure from ANY step above">
+          <mxGeometry relative="1" x="-0.2761" y="-20" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="875" y="545" />
+            </Array>
+            <mxPoint x="805" y="545" as="sourcePoint" />
+            <mxPoint x="875" y="790" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

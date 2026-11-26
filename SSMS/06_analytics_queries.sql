@@ -207,3 +207,62 @@ GROUP BY
 ORDER BY 
     ot.[is_late];
 GO
+
+
+-- ============================================================================
+USE [olist_dwh];
+GO
+
+WITH sales_kpis AS (
+    SELECT 
+        SUM([total_item_value]) AS [total_revenue],
+        COUNT(DISTINCT [order_id]) AS [total_orders],
+        CAST(SUM([total_item_value]) / NULLIF(COUNT(DISTINCT [order_id]), 0) AS DECIMAL(10,2)) AS [avg_order_value]
+    FROM [gold].[fact_sales]
+),
+delivery_kpis AS (
+    SELECT 
+        CAST(SUM(CAST([is_late] AS INT)) * 100.0 / NULLIF(COUNT(*), 0) AS DECIMAL(5,2)) AS [pct_late_deliveries]
+    FROM (
+        SELECT DISTINCT 
+            f.[order_id], 
+            f.[is_late]
+        FROM [gold].[fact_sales] AS f
+        JOIN [gold].[dim_order_status] AS os 
+            ON f.[order_status_key] = os.[order_status_key]
+        WHERE os.[is_delivered] = 1
+          AND f.[is_late] IS NOT NULL
+    ) AS delivered_orders
+),
+review_kpis AS (
+    SELECT 
+        CAST(AVG(CAST([review_score] AS DECIMAL(5,2))) AS DECIMAL(3,2)) AS [avg_review_score]
+    FROM [gold].[fact_reviews]
+    WHERE [review_score] IS NOT NULL
+),
+customer_kpis AS (
+    SELECT 
+        CAST(SUM(CASE WHEN [order_count] > 1 THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0) AS DECIMAL(5,2)) AS [repeat_customer_rate_pct]
+    FROM (
+        SELECT 
+            c.[customer_unique_id],
+            COUNT(DISTINCT f.[order_id]) AS [order_count]
+        FROM [gold].[fact_sales] AS f
+        JOIN [gold].[dim_customer] AS c 
+            ON f.[customer_key] = c.[customer_key]
+        WHERE c.[customer_key] <> -1
+        GROUP BY c.[customer_unique_id]
+    ) AS customer_orders
+)
+SELECT 
+    s.[total_revenue],
+    s.[total_orders],
+    s.[avg_order_value],
+    d.[pct_late_deliveries],
+    r.[avg_review_score],
+    c.[repeat_customer_rate_pct]
+FROM sales_kpis AS s
+CROSS JOIN delivery_kpis AS d
+CROSS JOIN review_kpis AS r
+CROSS JOIN customer_kpis AS c;
+GO
